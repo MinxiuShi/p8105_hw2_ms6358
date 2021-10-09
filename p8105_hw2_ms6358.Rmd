@@ -87,6 +87,31 @@ The pols-month dataset has dimension `r nrow(pols_df)` x `r ncol(pols_df)`. The 
 
 ## Problem 3
 
+```{r}
+names_df = read_csv("./data/Popular_Baby_Names.csv") %>%
+  janitor::clean_names() %>%
+  mutate(ethnicity = recode(ethnicity, `WHITE NON HISP` = "WHITE NON HISPANIC", `ASIAN AND PACI` = "ASIAN AND PACIFIC ISLANDER", `BLACK NON HISP` = "BLACK NON HISPANIC"), childs_first_name = str_to_title(childs_first_name))
+```
+```{r}
+names_filtered = names_df[!duplicated(names_df[,1:6]),]
+
+olivia = filter(names_filtered, childs_first_name == "Olivia", gender == "FEMALE") %>%
+  arrange(year_of_birth) %>%
+  pivot_wider(ethnicity, names_from = "year_of_birth", values_from = "rank") %>%
+  knitr::kable()
+olivia
+
+most_popular_male_name = filter(names_filtered, rank == "1", gender == "MALE") %>%
+  arrange(year_of_birth) %>%
+  pivot_wider(ethnicity, names_from = "year_of_birth", values_from = "childs_first_name") %>%
+  knitr::kable()
+most_popular_male_name
+```
+```{r}
+male_white_nonhispanic_2016 = filter(names_filtered, gender == "MALE", ethnicity == "WHITE NON HISPANIC", year_of_birth == 2016) %>% 
+  ggplot(aes(x = rank, y = count)) + geom_point()
+male_white_nonhispanic_2016
+```
 
   
   
