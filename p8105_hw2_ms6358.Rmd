@@ -12,11 +12,10 @@ library(readxl)
 ## data cleaning
 
 ```{r}
-litters_data = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N535") %>%
-   janitor::clean_names() %>%
-   names() %>%
-   drop_na(dumpster) %>%
-   mutate(sports_balls = round(sports_balls)) %>%
+litters_data = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx",  "Mr. Trash Wheel", range = "A2:N535") %>%
+  janitor::clean_names() %>%
+  drop_na(dumpster) %>%
+  mutate(sports_balls = round(sports_balls))
 ```
 
 ## Read and clean precipitation data for 2018 and 2019
@@ -32,23 +31,24 @@ precipitation_data_19 = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-se
   mutate(year = 2019)
 
 total_data = 
-  bind_rows(precipitation_data_18, precipitation_2019) %>%
+  bind_rows(precipitation_data_18, precipitation_data_19) %>%
   mutate(month = month.name[month])
 ```
 
-The number of observations in dataset "litters_data" is `r nrow(litters_data)` and the key variables are `r names(litters_data)`. The number of observations in dataset "total_data" is `r nrow(total_data)` and the key variables are `r names(total_data)`.The total precipitation in 2018 is `r sum(pull(precipitation_data_18, total))`and the median number of sports balls in a dumpster in 2019 is `r median(pull(filter(litters_data, year == 2019). sports_balls))`
+The number of observations in dataset "litters_data" is `r nrow(litters_data)` and the key variables are `r names(litters_data)`. The number of observations in dataset "total_data" is `r nrow(total_data)` and the key variables are `r names(total_data)`.The total precipitation in 2018 is `r sum(pull(precipitation_data_18, total))`and the median number of sports balls in a dumpster in 2019 is `r median(pull(filter(litters_data, year == 2019), sports_balls))`
 
 ## Problem 2
 
 ```{r}
 pols_df =
-  read_csv("./data/__MACOSX/fivethirtyeight_datasets/._pols-month.csv") %>%
+  read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
   janitor::clean_names() %>%
-  seperate(mon, into = c("year", "month", "day")) %>%
+  separate(mon, into = c("year", "month", "day")) %>%
+  mutate(year = as.integer(year), month = as.integer(month), day = as.integer(day)) %>%
   mutate(month = month.name[month]) %>%
   rename(dem = prez_dem) %>%
   rename(gop = prez_gop) %>%
-  pivot_longer(c(dem, gop), names_to = "pem", values_to = "president") %>%
+  pivot_longer(c(dem, gop), names_to = "prez", values_to = "president") %>%
   select(-day)
 ```
 
@@ -56,8 +56,37 @@ pols_df =
 snp_df = 
   read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   janitor::clean_names() %>%
-  seperate(date, into = c("year", "month", "day")) %>%
+  separate(date, into = c("year", "month", "day")) %>%
   arrange(year, month)
-  
+
+snp_df_1 = filter(snp_df, year >= 50) %>%
+  mutate(year = as.numeric(year) + 1900)
+
+snp_df_2 = filter(snp_df, year <= 15) %>%
+  mutate(year = as.numeric(year) + 2000)
+
+snp_df_total = bind_rows(snp_df_1, snp_df_2) %>%
+  mutate(month = month.name[as.integer(month)]) %>%
+  select(-day) %>%
+  relocate(year, month)
+```
+```{r}
+unemployment_df = 
+   read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>%
+   pivot_longer(Jan:Dec, names_to = "month", values_to = "unemployment rate") %>%
+   janitor::clean_names() %>%
+   mutate(month = recode(month, `Jan` = "January", `Feb` = "February", `Mar` = "March", `Apr` = "April", `Jun` = "June", `Jul` = "July", `Aug` = "August", `Sep` = "September", `Oct` = "October", `Nov` = "November", `Dec` = "December"))
+```
+
+```{r}
+polsmonth_snp = left_join(pols_df, snp_df_total)
+polsmonth_snp_unemployment = left_join(polsmonth_snp, unemployment_df)
+```
+
+The pols-month dataset has dimension `r nrow(pols_df)` x `r ncol(pols_df)`. The  years ranges from 1947 to 2015. The key variables are `r names(pols_df)`. The snp dataset has dimension `r nrow(snp_df_total)` x `r ncol(snp_df_total)`. The years ranges from 1950 to 2015. The key variables are `r names(snp_df_total)`. The unemployment dataset has dimension `r nrow(unemployment_df)` x `r ncol(unemployment_df)`. The years ranges from 1948 to 2015. The key variables are `r names(unemployment_df)`. The joint dataset has dimension `r nrow(polsmonth_snp_unemployment)` x `r ncol(polsmonth_snp_unemployment)`. The  years ranges from 1947 to 2015. The key variables are `r names(polsmonth_snp_unemployment)`.
+
+## Problem 3
+
+
   
   
