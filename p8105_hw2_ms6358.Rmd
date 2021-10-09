@@ -12,42 +12,31 @@ library(readxl)
 ## data cleaning
 
 ```{r}
-litters_data = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx", "Mr. Trash Wheel")
-drop_na(litters_data)
-litters_clean_names = janitor::clean_names(litters_data)
-names(litters_clean_names)
-   drop_na(litters_clean_names, dumpster)
-   sports_balls_round = c(pull(litters_clean_names, sports_balls))
-   round(sports_balls_round , digits = 0)
+litters_data = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N535") %>%
+   janitor::clean_names() %>%
+   names() %>%
+   drop_na(dumpster) %>%
+   mutate(sports_balls = round(sports_balls)) %>%
 ```
+
 ## Read and clean precipitation data for 2018 and 2019
 
 ```{r}
-litter_data_18 = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx","2018 Precipitation",
-                            skip = 2)%>%
+precipitation_data_18 = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx","2018 Precipitation", range = "A2:B14")%>%
   janitor::clean_names() %>%
-  drop_na(litter_data_18) %>%
-litter_data_18
-
-  mutate(
-    litter_data_18,
-     year = 2018
-  )
+  mutate(year = 2018)
 
 
-litter_data_19 = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx","2019 Precipitation",
-                            skip = 2)%>%
+precipitation_data_19 = read_excel("data/Trash-Wheel-Collection-Totals-7-2021-sept.xlsx","2019 Precipitation", range = "A2:B14")%>%
   janitor::clean_names() %>%
-  drop_na(litter_data_19) %>%
-  mutate(
-    litter_data_19,
-     year = 2019
-  )
+  mutate(year = 2019)
 
 total_data = 
-  left_join(litter_data_18, litter_data_19, by = "Month")
-rlang::last_error()
+  bind_rows(precipitation_data_18, precipitation_2019) %>%
+  mutate(month = month.name[month])
 ```
+
+The number of observations in dataset "litters_data" is `r nrow(litters_data)` and the key variables are `r names(litters_data)`. The number of observations in dataset "total_data" is `r nrow(total_data)` and the key variables are `r names(total_data)`.The total precipitation in 2018 is `r sum(pull(precipitation_data_18, total))`and the median number of sports balls in a dumpster in 2019 is `r median(pull(filter(litters_data, year == 2019). sports_balls))`
 
 ## Problem 2
 
@@ -55,8 +44,20 @@ rlang::last_error()
 pols_df =
   read_csv("./data/__MACOSX/fivethirtyeight_datasets/._pols-month.csv") %>%
   janitor::clean_names() %>%
-  seperate(mon, into = c("year", "month", "day"), )
-  
-  
-  
+  seperate(mon, into = c("year", "month", "day")) %>%
+  mutate(month = month.name[month]) %>%
+  rename(dem = prez_dem) %>%
+  rename(gop = prez_gop) %>%
+  pivot_longer(c(dem, gop), names_to = "pem", values_to = "president") %>%
+  select(-day)
 ```
+
+```{r}
+snp_df = 
+  read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
+  janitor::clean_names() %>%
+  seperate(date, into = c("year", "month", "day")) %>%
+  arrange(year, month)
+  
+  
+  
